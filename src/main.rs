@@ -31,17 +31,17 @@ fn index() -> &'static str {
 }
 
 #[post("/hook", format = "json", data = "<event>")]
-fn hook(event: Json<Event<'_>>) -> &str {
+fn hook(event: Json<Event<'_>>) {
     println!("Event received!");
     let event = event.into_inner();
     if event.action != "closed" {
         println!("Not closed event!");
-        return "Action not relevant";
+        return;
     }
 
     if !event.pull_request.merged {
         println!("Not merged event!");
-        return "pull request not merged";
+        return;
     }
 
     println!("A merged event!");
@@ -54,8 +54,6 @@ fn hook(event: Json<Event<'_>>) -> &str {
 
     update_repo(&repo);
     rebuild_container(&repo);
-
-    "Done"
 }
 
 #[launch]
