@@ -3,6 +3,7 @@ extern crate rocket;
 use dotenv::dotenv;
 use repo::{get_repo, rebuild_container, update_repo};
 use rocket::serde::{json::Json, Deserialize};
+use rocket::tokio::spawn;
 mod repo;
 
 #[derive(Deserialize, PartialEq, Eq)]
@@ -52,8 +53,10 @@ fn hook(event: Json<Event<'_>>) {
         }
     };
 
-    update_repo(&repo);
-    rebuild_container(&repo);
+    spawn(async move {
+        update_repo(&repo);
+        rebuild_container(&repo);
+    });
 }
 
 #[launch]
