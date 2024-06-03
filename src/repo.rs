@@ -68,7 +68,7 @@ pub fn rebuild_image(repo: &Repo) {
 
 pub fn pull_image(repo: &Repo) {
     let mut command = Command::new("docker-compose");
-    command.args(["up", "-d", "--pull always"]);
+    command.args(["up", "-d", "--pull", "always"]);
     command.current_dir(repo.path.clone());
 
     let out = command.output().expect("Command failed");
