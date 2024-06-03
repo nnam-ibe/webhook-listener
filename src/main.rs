@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 use dotenv::dotenv;
-use repo::{get_repo, rebuild_container, update_repo};
+use repo::{get_repo, pull_image, rebuild_image, update_repo};
 use rocket::serde::{json::Json, Deserialize};
 use rocket::tokio::spawn;
 mod repo;
@@ -26,6 +26,12 @@ struct Event<'r> {
     repository: Repository,
 }
 
+#[derive(PartialEq, Eq, Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct ImageUpdate<'r> {
+    repo_name: &'r str,
+}
+
 #[get("/")]
 fn index() -> &'static str {
     "Ping!"
@@ -46,17 +52,25 @@ fn hook(event: Json<Event<'_>>) {
     }
 
     println!("A merged event!");
-    let repo = match get_repo(event.repository.full_name) {
-        Some(i) => i,
-        None => {
-            panic!("Unknown repo!");
-        }
-    };
 
-    spawn(async move {
-        update_repo(&repo);
-        rebuild_container(&repo);
-    });
+    if let Some(repo) = get_repo(event.repository.full_name) {
+        println!("Known repo, updating...");
+        spawn(async move {
+            update_repo(&repo);
+            rebuild_image(&repo);
+        });
+    }
+}
+
+#[post("/image/update", format = "json", data = "<data>")]
+fn image_update(data: Json<ImageUpdate<'_>>) {
+    let repo_name = data.into_inner().repo_name;
+    if let Some(repo) = get_repo(repo_name.into()) {
+        println!("Boy we gat a stew going, {}", repo.path);
+        spawn(async move {
+            pull_image(&repo);
+        });
+    }
 }
 
 #[launch]
@@ -73,5 +87,5 @@ fn rocket() -> _ {
         panic!("Env vars must be of the same length");
     }
 
-    rocket::build().mount("/", routes![index, hook])
+    rocket::build().mount("/", routes![index, hook, image_update])
 }

@@ -43,14 +43,13 @@ pub fn update_repo(repo: &Repo) {
         false => out.stderr,
     };
 
-    let s = match String::from_utf8(data) {
-        Ok(v) => v,
-        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    match String::from_utf8(data) {
+        Ok(v) => println!("{}", v),
+        Err(e) => println!("Invalid UTF-8 sequence: {}", e),
     };
-    println!("{}", s);
 }
 
-pub fn rebuild_container(repo: &Repo) {
+pub fn rebuild_image(repo: &Repo) {
     let mut command = Command::new("docker-compose");
     command.args(["up", "-d", "--build"]);
     command.current_dir(repo.path.clone());
@@ -61,9 +60,25 @@ pub fn rebuild_container(repo: &Repo) {
         false => out.stderr,
     };
 
-    let s = match String::from_utf8(data) {
-        Ok(v) => v,
-        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    match String::from_utf8(data) {
+        Ok(v) => println!("{}", v),
+        Err(e) => println!("Invalid UTF-8 sequence: {}", e),
+    }
+}
+
+pub fn pull_image(repo: &Repo) {
+    let mut command = Command::new("docker-compose");
+    command.args(["up", "-d", "--pull"]);
+    command.current_dir(repo.path.clone());
+
+    let out = command.output().expect("Command failed");
+    let data = match out.status.success() {
+        true => out.stdout,
+        false => out.stderr,
     };
-    println!("{}", s);
+
+    match String::from_utf8(data) {
+        Ok(v) => println!("{}", v),
+        Err(e) => println!("Invalid UTF-8 sequence: {}", e),
+    }
 }
